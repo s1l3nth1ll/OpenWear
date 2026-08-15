@@ -1,0 +1,81 @@
+# ==============================
+# OpenWear Git Ignore
+# ==============================
+ 
+# Android / Gradle
+.gradle/
+build/
+*/build/
+local.properties
+ 
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.externalNativeBuild/
+.cxx/
+ 
+# Kotlin
+*.class
+ 
+# Generated Android files
+captures/
+ 
+# Logs
+*.log
+ 
+# Operating system files
+.DS_Store
+Thumbs.db
+ 
+# Temporary files
+*.tmp
+*.temp
+ 
+# Environment / secrets
+.env
+.env.*
+*.env
+ 
+# Keystores / signing keys
+*.keystore
+*.jks
+ 
+# Firebase / Google service files
+google-services.json
+ 
+# Kotlin / Compose generated files
+.kotlin/
+.kotlin-build/
+ 
+# Native build files
+.externalNativeBuild/
+.cxx/
+ 
+# VS Code
+.vscode/
+ 
+# Node.js (if used later)
+node_modules/
+ 
+# Python (if used later)
+__pycache__/
+*.py[cod]
+ 
+# Build artifacts
+*.apk
+*.aab
+*.apks
+ 
+# Crash dumps
+*.hprof
+ 
+# OS / editor backup files
+*~
+*.swp
+*.swo
+ 
+# Secrets / credentials
+secrets/
+
+    credentials/
+
