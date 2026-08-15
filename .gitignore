@@ -31,3 +31,13 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Generated files
+captures/
+.externalNativeBuild/
+
+# Node / tooling if added later
+node_modules/
+
+# IDE metadata
+.vscode/
