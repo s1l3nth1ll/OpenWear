@@ -211,14 +211,14 @@ OpenWear is currently in the earliest stage of development.
  
 ### Milestone 1 — Polar Pacer
  
-- [ ] Create Android application
-- [ ] Bluetooth permissions
-- [ ] BLE scanning
-- [ ] Detect Polar Pacer
-- [ ] Connect to Polar Pacer
-- [ ] Discover GATT services
-- [ ] Identify supported interfaces
-- [ ] Identify available data
+- [x] Create Android application
+- [x] Bluetooth permissions
+- [x] BLE scanning
+- [x] Detect Polar Pacer
+- [x] Connect to Polar Pacer
+- [x] Discover GATT services
+- [x] Identify supported interfaces
+- [x] Identify available data
 - [ ] Receive supported sensor data
 - [ ] Create normalized data model
 - [ ] Store data locally
