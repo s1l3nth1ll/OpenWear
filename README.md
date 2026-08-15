@@ -12,3 +12,38 @@ The project starts with **Android and Polar devices**, beginning with the **Pola
 
 --
 
+##🎯Project Goals
+
+-🔓**Open source**
+-🔒**Privacy-first**
+-📴**Local-first and offline-capable**
+-🚫**No selling personal or health data**
+-🚫**No mandatory account**
+-🚫**No mandatory cloud service**
+-📦**User-controlled data export**
+-🗑️**User-controlled data deletion**
+-🔌**Extensible device architecture**
+-⌚**Support smartwatches and smart rings**
+-⚒️**Eventually support open wearable hardware and firmware**
+
+--
+
+##🏗️Architecture
+
+OpenWear separates device-specific communication from the rest of the application.
+
+#ADD FLOW CHART LATER##
+
+The application should not need to know whether a heart-rate measurement came from a Polar watch, a smart ring, or OpenWear hardware.
+
+# 🔒 Privacy Model
+
+Privacy is a technical requirement of OpenWear, not merely a policy.
+
+The initial design is:
+
+#ADDFLOWCHARTLATER#
+
+There is **no OpenWear server in the required data path**
+
+**Privacy Principles**
