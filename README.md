@@ -211,8 +211,8 @@ OpenWear is currently in the earliest stage of development.
  
 ### Milestone 1 — Polar Pacer
  
-- [✅] Create Android application
-- [✅] Bluetooth permissions
+- [ ] Create Android application
+- [ ] Bluetooth permissions
 - [ ] BLE scanning
 - [ ] Detect Polar Pacer
 - [ ] Connect to Polar Pacer
