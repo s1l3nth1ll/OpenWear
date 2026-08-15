@@ -247,7 +247,7 @@ OpenWear is currently in the earliest stage of development.
 - [ ] Smart-ring support
 - [ ] Community device drivers
  
-### Milestone 4 — Open Wearables
+### Milestone 4 — Open Wearables (Very far in the future)
  
 - [ ] Open wearable reference board
 - [ ] Open firmware
@@ -503,4 +503,4 @@ If you believe wearable technology should be more **open, private, interoperable
 **Your body. Your data. Your device.**
  
 **Open-source wearable technology built around privacy, ownership, and interoperability.**
-````
+
