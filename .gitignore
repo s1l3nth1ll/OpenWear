@@ -1,0 +1,33 @@
+# Android
+.gradle/
+.idea/
+*.iml
+local.properties
+
+# Build output
+build/
+out/
+
+# Android Stusio
+.externalNativeBuild/
+.cxx/
+
+# Kotlin
+*.class
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.keystore
+*.jks
+.env
+.env.*
+
+# Temporary files
+*.tmp
+*.temp
