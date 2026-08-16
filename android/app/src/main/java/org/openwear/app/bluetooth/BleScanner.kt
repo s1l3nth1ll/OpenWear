@@ -1,9 +1,10 @@
 package org.openwear.app.bluetooth
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,11 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 class BleScanner(
     private val bluetoothAdapter: BluetoothAdapter
 ) {
-
-    private val scanner: BluetoothLeScanner
-        get() = bluetoothAdapter.bluetoothLeScanner
-
     private val _devices = MutableStateFlow<List<BleDevice>>(emptyList())
+
     val devices: StateFlow<List<BleDevice>> = _devices.asStateFlow()
 
     private val scanCallback = object : ScanCallback() {
@@ -27,33 +25,46 @@ class BleScanner(
             val device = result.device
 
             val bleDevice = BleDevice(
-                name = device.name,
+                name = try {
+                    device.name
+                } catch (_: SecurityException) {
+                    null
+                },
                 address = device.address,
                 rssi = result.rssi
             )
 
             val currentDevices = _devices.value
 
-            if (currentDevices.none { it.address == bleDevice.address }) {
-                _devices.value = currentDevices + bleDevice
-            } else {
-                _devices.value = currentDevices.map {
-                    if (it.address == bleDevice.address) bleDevice else it
+            _devices.value =
+                if (currentDevices.any { it.address == bleDevice.address }) {
+                    currentDevices.map {
+                        if (it.address == bleDevice.address) {
+                            bleDevice
+                        } else {
+                            it
+                        }
+                    }
+                } else {
+                    currentDevices + bleDevice
                 }
-            }
         }
 
         override fun onScanFailed(errorCode: Int) {
-            // We'll replace this with proper error handling later.
+            // Error handling will be added next.
         }
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     fun startScan() {
         _devices.value = emptyList()
-        scanner.startScan(scanCallback)
+        bluetoothAdapter.bluetoothLeScanner.startScan(scanCallback)
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     fun stopScan() {
-        scanner.stopScan(scanCallback)
+        bluetoothAdapter.bluetoothLeScanner.stopScan(scanCallback)
     }
+
 }
+
