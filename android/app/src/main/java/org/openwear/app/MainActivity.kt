@@ -1,220 +1,219 @@
 package org.openwear.app
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import android.util.Log
+import android.widget.Button
+import android.widget.TextView
+import androidx.core.app.ActivityCompat
 import org.openwear.app.bluetooth.BleConnection
-import org.openwear.app.bluetooth.BleDevice
-import org.openwear.app.bluetooth.BleScanner
-import kotlinx.coroutines.flow.MutableStateFlow
 
-class MainActivity : ComponentActivity() {
+class MainActivity : Activity() {
 
-    private val bluetoothAdapter: BluetoothAdapter? by lazy {
-        BluetoothAdapter.getDefaultAdapter()
-    }
-
-    private var bleScanner: BleScanner? = null
-
+    // ------------------------------------------------------------
+    // BLE connection to the Polar Pacer
+    // ------------------------------------------------------------
     private lateinit var bleConnection: BleConnection
 
-    private val permissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
+    // MAC address of the Polar Pacer used for testing.
+    private val polarPacerAddress = "A0:9E:1A:B7:61:1C"
 
-            val granted = permissions.values.all { it }
+    // ------------------------------------------------------------
+    // UI elements
+    // ------------------------------------------------------------
+    private lateinit var connectionStatus: TextView
+    private lateinit var batteryText: TextView
+    private lateinit var heartRateText: TextView
+    private lateinit var connectButton: Button
 
-            if (granted) {
-                startScanning()
-            }
-        }
+    companion object {
+        private const val TAG = "OpenWear"
+        private const val BLUETOOTH_PERMISSION_REQUEST = 1001
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Load the main activity layout.
+        setContentView(R.layout.activity_main)
+
+        // Find the UI elements from activity_main.xml.
+        connectionStatus = findViewById(R.id.connectionStatus)
+        batteryText = findViewById(R.id.batteryText)
+        heartRateText = findViewById(R.id.heartRateText)
+        connectButton = findViewById(R.id.connectButton)
+
+        // Create the BLE connection handler.
         bleConnection = BleConnection(this)
 
-        bluetoothAdapter?.let { adapter ->
-            bleScanner = BleScanner(adapter)
+        // --------------------------------------------------------
+        // BLE connection state callback
+        // --------------------------------------------------------
+        bleConnection.onConnectionChanged = { connected ->
+
+            // BLE callbacks may happen on a background thread,
+            // so UI changes must happen on the main thread.
+            runOnUiThread {
+
+                if (connected) {
+                    connectionStatus.text = "Connected"
+                    connectButton.text = "Connected"
+                } else {
+                    connectionStatus.text = "Disconnected"
+                    connectButton.text = "Connect"
+                }
+            }
         }
 
-        setContent {
+        // --------------------------------------------------------
+        // Battery level callback
+        // --------------------------------------------------------
+        bleConnection.onBatteryChanged = { battery ->
 
-            val devices by (
-                    bleScanner?.devices
-                        ?: MutableStateFlow<List<BleDevice>>(emptyList())
-                    ).collectAsState()
+            runOnUiThread {
+                batteryText.text = "Battery: $battery%"
+            }
+        }
 
-            OpenWearApp(
-                devices = devices,
+        // --------------------------------------------------------
+        // Heart rate callback
+        // --------------------------------------------------------
+        bleConnection.onHeartRateChanged = { heartRate ->
 
-                onScanClick = {
-                    requestBluetoothPermissions()
-                },
+            runOnUiThread {
+                heartRateText.text = "Heart Rate: $heartRate BPM"
+            }
+        }
 
-                onDeviceClick = { device ->
-                    android.widget.Toast.makeText(
+        // --------------------------------------------------------
+        // Connect button
+        // --------------------------------------------------------
+        connectButton.setOnClickListener {
+
+            if (hasBluetoothPermission()) {
+
+                connectionStatus.text = "Connecting..."
+                connectButton.text = "Connecting..."
+
+                Log.d(
+                    TAG,
+                    "Connecting to Polar Pacer: $polarPacerAddress"
+                )
+
+                // Start the BLE connection.
+                bleConnection.connect(polarPacerAddress)
+
+            } else {
+
+                // Request Bluetooth permissions if necessary.
+                requestBluetoothPermission()
+            }
+        }
+
+        // Check permissions when the app starts.
+        if (!hasBluetoothPermission()) {
+            requestBluetoothPermission()
+        }
+    }
+
+    // ============================================================
+    // BLUETOOTH PERMISSION CHECK
+    // ============================================================
+
+    private fun hasBluetoothPermission(): Boolean {
+
+        // Android 12 and newer require these Bluetooth permissions.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+
+            return ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_SCAN
+            ) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(
                         this,
-                        "Connecting to ${device.name ?: device.address}...",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED
+        }
 
-                    bleConnection.connect(device.address)
-                }
+        // Older Android versions use the permissions declared
+        // in the manifest without these runtime checks.
+        return true
+    }
+
+    // ============================================================
+    // REQUEST BLUETOOTH PERMISSIONS
+    // ============================================================
+
+    private fun requestBluetoothPermission() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ),
+                BLUETOOTH_PERMISSION_REQUEST
             )
         }
     }
 
-    private fun requestBluetoothPermissions() {
+    // ============================================================
+    // PERMISSION REQUEST RESULT
+    // ============================================================
 
-        val permissions =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults
+        )
 
-                arrayOf(
-                    Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.BLUETOOTH_CONNECT
+        if (requestCode == BLUETOOTH_PERMISSION_REQUEST) {
+
+            if (
+                grantResults.isNotEmpty() &&
+                grantResults.all {
+                    it == PackageManager.PERMISSION_GRANTED
+                }
+            ) {
+
+                Log.d(
+                    TAG,
+                    "Bluetooth permissions granted"
                 )
 
             } else {
 
-                arrayOf(
-                    Manifest.permission.BLUETOOTH,
-                    Manifest.permission.BLUETOOTH_ADMIN
+                Log.e(
+                    TAG,
+                    "Bluetooth permissions denied"
                 )
-            }
 
-        if (
-            permissions.all {
-                checkSelfPermission(it) ==
-                        PackageManager.PERMISSION_GRANTED
+                connectionStatus.text =
+                    "Bluetooth permission required"
             }
-        ) {
-            startScanning()
-        } else {
-            permissionLauncher.launch(permissions)
         }
     }
 
-    private fun startScanning() {
-        bleScanner?.startScan()
-    }
+    // ============================================================
+    // ACTIVITY CLEANUP
+    // ============================================================
 
     override fun onDestroy() {
-
-        bleScanner?.stopScan()
-        bleConnection.disconnect()
-
         super.onDestroy()
-    }
-}
 
-@androidx.compose.runtime.Composable
-fun OpenWearApp(
-    devices: List<BleDevice>,
-    onScanClick: () -> Unit,
-    onDeviceClick: (BleDevice) -> Unit
-) {
-
-    MaterialTheme {
-
-        Surface(
-            modifier = Modifier.fillMaxSize()
-        ) {
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-                Text(
-                    text = "OpenWear",
-                    style = MaterialTheme.typography.headlineLarge
-                )
-
-                Button(
-                    onClick = onScanClick,
-
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp)
-                ) {
-                    Text("Scan for devices")
-                }
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp),
-
-                    verticalArrangement =
-                        Arrangement.spacedBy(16.dp)
-                ) {
-
-                    items(
-                        items = devices,
-                        key = { it.address }
-                    ) { device ->
-
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-
-                            Text(
-                                text = device.name
-                                    ?: "Unknown device",
-
-                                style =
-                                    MaterialTheme.typography.titleMedium
-                            )
-
-                            Text(
-                                text = device.address
-                            )
-
-                            Text(
-                                text = "RSSI: ${device.rssi} dBm"
-                            )
-
-                            Button(
-                                onClick = {
-                                    onDeviceClick(device)
-                                },
-
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp)
-                            ) {
-                                Text("Connect")
-                            }
-                        }
-                    }
-                }
-            }
+        // Close the BLE connection when the Activity is destroyed.
+        if (::bleConnection.isInitialized) {
+            bleConnection.disconnect()
         }
     }
 }

@@ -15,7 +15,9 @@ import java.util.UUID
 class BleConnection(
     private val context: Context
 ) {
-
+    var onBatteryChanged: ((Int) -> Unit)? = null
+    var onHeartRateChanged: ((Int) -> Unit)? = null
+    var onConnectionChanged: ((Boolean) -> Unit)? = null
     private var bluetoothGatt: BluetoothGatt? = null
 
     private val readQueue = ArrayDeque<BluetoothGattCharacteristic>()
@@ -60,6 +62,7 @@ class BleConnection(
                             "OpenWear",
                             "Ignoring stale GATT connection"
                         )
+                        onConnectionChanged?.invoke(true)
                         gatt.close()
                         return
                     }
@@ -78,6 +81,7 @@ class BleConnection(
                         "OpenWear",
                         "DISCONNECTED: ${gatt.device.address}"
                     )
+                    onConnectionChanged?.invoke(false)
 
                     if (gatt === bluetoothGatt) {
                         bluetoothGatt = null
@@ -140,6 +144,7 @@ class BleConnection(
                                 "OpenWear",
                                 "BATTERY: $battery%"
                             )
+                            onBatteryChanged?.invoke(battery)
                         }
                     }
 
@@ -237,6 +242,7 @@ class BleConnection(
                 "OpenWear",
                 "HEART RATE: $heartRate BPM"
             )
+            onHeartRateChanged?.invoke(heartRate)
         }
     }
 
